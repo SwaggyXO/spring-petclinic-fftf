@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org" th:replace="~{fragments/layout :: layout (~{::body},'home')}">
+<head>
+  <meta charset="UTF-8">
+  <title>Feature Flag Dashboard</title>
+  <style>
+    .flag-card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      background: #fff;
+    }
+    .flag-enabled { border-left: 4px solid #28a745; }
+    .flag-disabled { border-left: 4px solid #dc3545; }
+    .strategy-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .audit-log {
+      max-height: 300px;
+      overflow-y: auto;
+      font-size: 12px;
+    }
+    .modal-dialog { max-width: 600px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="row">
+    <div class="col-md-12">
+      <!-- Add error alert -->
+      <div th:if="${error}" class="alert alert-danger alert-dismissible" role="alert">
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+        <strong>Error:</strong> <span th:text="${error}"></span>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2>Feature Flag Dashboard</h2>
+        <div>
+          <span>Welcome, <strong th:text="${username}">Admin</strong></span> |
+          <a th:href="@{/admin/logout}" class="btn btn-sm btn-danger">Logout</a>
+        </div>
+      </div>
+
+      <button class="btn btn-success btn-lg" onclick="showCreateModal()">
+        <span class="glyphicon glyphicon-plus" aria-hidden="true"></span> Create New Flag
+      </button>
+
+      <hr/>
+
+      <h3>Active Feature Flags</h3>
+      <div id="flagsContainer">
+        <div th:each="flag : ${flags}"
+             th:class="${flag.enabled} ? 'flag-card flag-enabled' : 'flag-card flag-disabled'">
+          <div style="display: flex; justify-content: space-between; align-items: start;">
+            <div style="flex: 1;">
+              <h4 style="margin-top: 0;">
+                <code th:text="${flag.flagKey}">flag_key</code>
+                <span th:class="'badge ' + (${flag.enabled} ? 'badge-success' : 'badge-danger')"
+                      th:text="${flag.enabled} ? 'ENABLED' : 'DISABLED'">Status</span>
+              </h4>
+              <p th:text="${flag.description}">Description</p>
+              <div>
+                                    <span class="strategy-badge" style="background: #e3f2fd; color: #1976d2;"
+                                          th:text="${flag.strategyType}">BOOLEAN</span>
+                <span class="text-muted" style="margin-left: 10px;">
+                                        Environment: <strong th:text="${flag.environment}">development</strong>
+                                    </span>
+              </div>
+            </div>
+            <div>
+              <button class="btn btn-sm btn-primary"
+                      th:onclick="'toggleFlag(\'' + ${flag.flagKey} + '\')'">
+                <span class="glyphicon glyphicon-refresh"></span> Toggle
+              </button>
+              <button class="btn btn-sm btn-info"
+                      th:onclick="'viewFlag(\'' + ${flag.flagKey} + '\')'">
+                <span class="glyphicon glyphicon-eye-open"></span> View
+              </button>
+              <button class="btn btn-sm btn-warning"
+                      th:onclick="'editFlag(\'' + ${flag.flagKey} + '\')'">
+                <span class="glyphicon glyphicon-edit"></span> Edit
+              </button>
+              <button class="btn btn-sm btn-danger"
+                      th:onclick="'deleteFlag(\'' + ${flag.flagKey} + '\')'">
+                <span class="glyphicon glyphicon-trash"></span> Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr/>
+
+      <h3>Recent Audit Log</h3>
+      <div class="audit-log">
+        <table class="table table-striped table-condensed">
+          <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Flag Key</th>
+            <th>Action</th>
+            <th>Changed By</th>
+            <th>Reason</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="audit : ${recentAudits}">
+            <td th:text="${#temporals.format(audit.timestamp, 'yyyy-MM-dd HH:mm:ss')}">2024-01-01 12:00:00</td>
+            <td><code th:text="${audit.flagKey}">flag_key</code></td>
+            <td>
+              <span class="label label-info" th:text="${audit.action}">CREATE</span>
+            </td>
+            <td th:text="${audit.changedBy}">admin</td>
+            <td th:text="${audit.reason}">Initial creation</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div class="modal" id="flagModal" tabindex="-1" role="dialog" style="display: none; position: fixed; z-index: 1050; top: 0; left: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+  <div class="modal-dialog" role="document" style="position: relative; width: 600px; margin: 50px auto; background-color: white; border-radius: 6px; box-shadow: 0 5px 15px rgba(0,0,0,0.5);">
+    <div class="modal-content" style="background-color: white; border: 1px solid #ddd; border-radius: 6px;">
+      <div class="modal-header" style="padding: 15px; border-bottom: 1px solid #e5e5e5;">
+        <button type="button" class="close" onclick="hideModal()" style="float: right; font-size: 21px; font-weight: bold; line-height: 1; color: #000; opacity: 0.2; background: transparent; border: 0; cursor: pointer;">&times;</button>
+        <h4 class="modal-title" id="modalTitle" style="margin: 0; line-height: 1.42857143;">Create Feature Flag</h4>
+      </div>
+      <div class="modal-body" style="position: relative; padding: 15px;">
+        <form id="flagForm">
+          <div class="form-group">
+            <label for="flagKey">Flag Key *</label>
+            <input type="text" class="form-control" id="flagKey"
+                   placeholder="e.g., new_checkout_flow" pattern="[a-z0-9_]+" required>
+            <small class="text-muted">Only lowercase letters, numbers, and underscores</small>
+          </div>
+
+          <div class="form-group">
+            <label for="description">Description</label>
+            <textarea class="form-control" id="description" rows="2"
+                      placeholder="What does this flag control?"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="enabled"> Enabled
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label for="strategyType">Strategy Type *</label>
+            <select class="form-control" id="strategyType" onchange="updateStrategyConfig()">
+              <option value="BOOLEAN">Boolean (Simple On/Off)</option>
+              <option value="PERCENTAGE">Percentage Rollout</option>
+              <option value="WHITELIST">Whitelist (Allow Specific)</option>
+              <option value="BLACKLIST">Blacklist (Block Specific)</option>
+              <option value="USER_ATTRIBUTE">User Attribute</option>
+              <option value="KILL_SWITCH">Kill Switch (Always Off)</option>
+            </select>
+          </div>
+
+          <div id="strategyConfigDiv" style="display: none;">
+            <div class="form-group">
+              <label>Strategy Configuration</label>
+              <div id="percentageConfig" style="display: none;">
+                <label for="percentage">Percentage (0-100)</label>
+                <input type="number" class="form-control" id="percentage" min="0" max="100" value="50">
+              </div>
+              <div id="whitelistConfig" style="display: none;">
+                <label for="whitelist">Whitelist (comma-separated user IDs or IPs)</label>
+                <input type="text" class="form-control" id="whitelist" placeholder="user123, 192.168.1.100">
+              </div>
+              <div id="blacklistConfig" style="display: none;">
+                <label for="blacklist">Blacklist (comma-separated user IDs or IPs)</label>
+                <input type="text" class="form-control" id="blacklist" placeholder="baduser, 10.0.0.1">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="reason">Reason for Change</label>
+            <input type="text" class="form-control" id="reason" placeholder="Why are you creating/updating this flag?">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer" style="padding: 15px; text-align: right; border-top: 1px solid #e5e5e5;">
+        <button type="button" class="btn btn-default" onclick="hideModal()">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="saveFlag()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let editMode = false;
+  let currentFlagKey = null;
+
+  function showCreateModal() {
+    editMode = false;
+    document.getElementById('modalTitle').textContent = 'Create Feature Flag';
+    document.getElementById('flagForm').reset();
+    document.getElementById('flagKey').disabled = false;
+    updateStrategyConfig();
+
+    // Show modal with proper styling
+    const modal = document.getElementById('flagModal');
+    modal.style.display = 'block';
+  }
+
+  function hideModal() {
+    const modal = document.getElementById('flagModal');
+    modal.style.display = 'none';
+  }
+
+  function updateStrategyConfig() {
+    const strategyType = document.getElementById('strategyType').value;
+    const configDiv = document.getElementById('strategyConfigDiv');
+
+    // Hide all configs
+    document.getElementById('percentageConfig').style.display = 'none';
+    document.getElementById('whitelistConfig').style.display = 'none';
+    document.getElementById('blacklistConfig').style.display = 'none';
+
+    if (strategyType === 'PERCENTAGE') {
+      configDiv.style.display = 'block';
+      document.getElementById('percentageConfig').style.display = 'block';
+    } else if (strategyType === 'WHITELIST') {
+      configDiv.style.display = 'block';
+      document.getElementById('whitelistConfig').style.display = 'block';
+    } else if (strategyType === 'BLACKLIST') {
+      configDiv.style.display = 'block';
+      document.getElementById('blacklistConfig').style.display = 'block';
+    } else {
+      configDiv.style.display = 'none';
+    }
+  }
+
+  function saveFlag() {
+    const flagKey = document.getElementById('flagKey').value;
+    const description = document.getElementById('description').value;
+    const enabled = document.getElementById('enabled').checked;
+    const strategyType = document.getElementById('strategyType').value;
+    const reason = document.getElementById('reason').value;
+
+    let strategyConfig = {};
+    if (strategyType === 'PERCENTAGE') {
+      strategyConfig = { percentage: parseInt(document.getElementById('percentage').value) };
+    } else if (strategyType === 'WHITELIST') {
+      const whitelist = document.getElementById('whitelist').value.split(',').map(s => s.trim());
+      strategyConfig = { whitelist: whitelist };
+    } else if (strategyType === 'BLACKLIST') {
+      const blacklist = document.getElementById('blacklist').value.split(',').map(s => s.trim());
+      strategyConfig = { blacklist: blacklist };
+    }
+
+    const payload = {
+      flagKey: flagKey,
+      description: description,
+      enabled: enabled,
+      strategyType: strategyType,
+      strategyConfig: strategyConfig,
+      environment: 'development',
+      createdBy: 'admin',
+      updatedBy: 'admin',
+      reason: reason || 'No reason provided'
+    };
+
+    const method = editMode ? 'PUT' : 'POST';
+    const url = editMode ? `/api/v1/flags/${currentFlagKey}` : '/api/v1/flags';
+
+    fetch(url, {
+      method: method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(err => { throw err; });
+        }
+        return response.json();
+      })
+      .then(data => {
+        hideModal();
+        location.reload();
+      })
+      .catch(error => {
+        alert('Error: ' + (error.message || JSON.stringify(error)));
+      });
+  }
+
+  function toggleFlag(flagKey) {
+    if (confirm('Toggle flag "' + flagKey + '"?')) {
+      fetch('/api/v1/flags/' + flagKey + '/toggle', { method: 'POST' })
+        .then(response => response.json())
+        .then(() => location.reload())
+        .catch(error => alert('Error: ' + error.message));
+    }
+  }
+
+  function viewFlag(flagKey) {
+    fetch('/api/v1/flags/' + flagKey)
+      .then(response => response.json())
+      .then(data => {
+        alert(JSON.stringify(data, null, 2));
+      })
+      .catch(error => alert('Error: ' + error.message));
+  }
+
+  function editFlag(flagKey) {
+    editMode = true;
+    currentFlagKey = flagKey;
+    document.getElementById('modalTitle').textContent = 'Edit Feature Flag';
+    document.getElementById('flagKey').disabled = true;
+
+    fetch('/api/v1/flags/' + flagKey)
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('flagKey').value = data.flagKey;
+        document.getElementById('description').value = data.description || '';
+        document.getElementById('enabled').checked = data.enabled;
+        document.getElementById('strategyType').value = data.strategyType;
+
+        updateStrategyConfig();
+
+        if (data.strategyConfig) {
+          if (data.strategyConfig.percentage) {
+            document.getElementById('percentage').value = data.strategyConfig.percentage;
+          }
+          if (data.strategyConfig.whitelist) {
+            document.getElementById('whitelist').value = data.strategyConfig.whitelist.join(', ');
+          }
+          if (data.strategyConfig.blacklist) {
+            document.getElementById('blacklist').value = data.strategyConfig.blacklist.join(', ');
+          }
+        }
+
+        showCreateModal();
+      })
+      .catch(error => alert('Error: ' + error.message));
+  }
+
+  function deleteFlag(flagKey) {
+    if (confirm('Are you sure you want to delete flag "' + flagKey + '"?')) {
+      fetch('/api/v1/flags/' + flagKey, { method: 'DELETE' })
+        .then(() => location.reload())
+        .catch(error => alert('Error: ' + error.message));
+    }
+  }
+
+  // Close modal when clicking close button or backdrop
+  document.addEventListener('DOMContentLoaded', function() {
+    // Close button handlers
+    var closeButtons = document.querySelectorAll('[data-dismiss="modal"]');
+    closeButtons.forEach(function(btn) {
+      btn.addEventListener('click', hideModal);
+    });
+
+    // Backdrop click
+    document.addEventListener('click', function(e) {
+      if (e.target.id === 'modalBackdrop') {
+        hideModal();
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
