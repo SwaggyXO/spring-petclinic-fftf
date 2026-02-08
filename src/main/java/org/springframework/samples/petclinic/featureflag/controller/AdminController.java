@@ -1,6 +1,8 @@
 package org.springframework.samples.petclinic.featureflag.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.samples.petclinic.featureflag.model.FlagAudit;
 import org.springframework.samples.petclinic.featureflag.security.AdminSession;
 import org.springframework.samples.petclinic.featureflag.service.FeatureFlagService;
 import org.springframework.stereotype.Controller;
@@ -31,7 +33,6 @@ public class AdminController {
 	@PostMapping("/admin/login")
 	public String login(@RequestParam String username, @RequestParam String password, Model model) {
 		try {
-			// Simple hardcoded check - for demo purposes
 			if ("admin".equals(username) && "admin123".equals(password)) {
 				adminSession.login(username);
 				return "redirect:/admin/flags";
@@ -57,19 +58,31 @@ public class AdminController {
 	}
 
 	@GetMapping("/admin/flags")
-	public String flagDashboard(Model model) {
+	public String flagDashboard(
+		@RequestParam(defaultValue = "0") int auditPage,
+		@RequestParam(defaultValue = "10") int auditSize,
+		Model model
+	) {
 		try {
 			model.addAttribute("username", adminSession.getUsername());
 			model.addAttribute("flags", flagService.getAllFlags("development"));
-			model.addAttribute("recentAudits", flagService.getRecentAuditLog());
+
+			Page<FlagAudit> auditPageData = flagService.getRecentAudits(auditPage, auditSize);
+			model.addAttribute("auditPage", auditPageData);
+			model.addAttribute("recentAudits", auditPageData.getContent());
+
 			return "admin/flags";
 		} catch (Exception e) {
 			log.error("Error loading flag dashboard", e);
 			model.addAttribute("error", "Unable to load feature flags. Please check the system configuration.");
 			model.addAttribute("username", adminSession.getUsername());
 			model.addAttribute("flags", Collections.emptyList());
+
+			model.addAttribute("auditPage", Page.empty());
 			model.addAttribute("recentAudits", Collections.emptyList());
+
 			return "admin/flags";
 		}
 	}
+
 }

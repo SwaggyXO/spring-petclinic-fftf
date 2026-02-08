@@ -57,7 +57,7 @@ public class FeatureFlagEvaluator {
 				return evaluateUserAttribute(flag, context);
 
 			case KILL_SWITCH:
-				return false; // Always returns false for emergency shutoff
+				return false;
 
 			default:
 				return flag.getEnabled();

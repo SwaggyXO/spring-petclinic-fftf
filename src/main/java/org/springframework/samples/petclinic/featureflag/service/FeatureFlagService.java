@@ -4,6 +4,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.samples.petclinic.featureflag.model.FeatureFlag;
@@ -65,7 +69,6 @@ public class FeatureFlagService {
 
 		FeatureFlag saved = flagRepository.save(flag);
 
-		// Log audit
 		logAudit(saved, "CREATE", null, toAuditMap(saved), dto.getReason());
 
 		return saved;
@@ -80,7 +83,6 @@ public class FeatureFlagService {
 
 		Map<String, Object> oldValues = toAuditMap(existing);
 
-		// Update fields
 		if (dto.getDescription() != null) {
 			existing.setDescription(dto.getDescription());
 		}
@@ -101,7 +103,6 @@ public class FeatureFlagService {
 
 		FeatureFlag updated = flagRepository.save(existing);
 
-		// Log audit
 		logAudit(updated, "UPDATE", oldValues, toAuditMap(updated), dto.getReason());
 
 		return updated;
@@ -118,7 +119,6 @@ public class FeatureFlagService {
 
 		flagRepository.delete(flag);
 
-		// Log audit
 		logAudit(flag, "DELETE", oldValues, null, "Flag deleted");
 	}
 
@@ -136,10 +136,15 @@ public class FeatureFlagService {
 
 		FeatureFlag updated = flagRepository.save(flag);
 
-		// Log audit
 		logAudit(updated, "TOGGLE", oldValues, toAuditMap(updated), "Flag toggled");
 
 		return updated;
+	}
+
+	public Page<FlagAudit> getRecentAudits(int page, int size) {
+		log.info("Fetching audit logs - page: {}, size: {}", page, size);
+		Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "timestamp"));
+		return auditRepository.findAll(pageable);
 	}
 
 	public boolean evaluate(String flagKey, FlagContext context) {

@@ -59,7 +59,7 @@
             <span th:text="#{error}">Error</span>
           </li>
 
-          <li th:replace="::menuItem ('/admin/flags', 'flags', 'Feature Flags', 'flag', 'Feature Flags')">
+          <li th:replace="~{::menuItem ('/admin/flags', 'flags', 'Feature Flags', 'flag', 'Feature Flags')}">
             <span class="glyphicon glyphicon-flag" aria-hidden="true"></span>
             <span>Feature Flags</span>
           </li>

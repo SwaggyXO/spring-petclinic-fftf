@@ -17,12 +17,10 @@ public class AdminInterceptor implements HandlerInterceptor {
 	public boolean preHandle(HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull Object handler) throws Exception {
 		String uri = request.getRequestURI();
 
-		// Allow login page and API endpoints
 		if (uri.contains("/admin/login") || uri.startsWith("/api/")) {
 			return true;
 		}
 
-		// Check if accessing admin pages
 		if (uri.contains("/admin/flags")) {
 			if (!adminSession.isAuthenticated()) {
 				response.sendRedirect("/admin/login");

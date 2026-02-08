@@ -28,5 +28,5 @@ public class FeatureFlagDTO {
 
 	private String updatedBy;
 
-	private String reason; // For audit trail
+	private String reason;
 }

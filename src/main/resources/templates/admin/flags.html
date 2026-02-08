@@ -26,6 +26,47 @@
       font-size: 12px;
     }
     .modal-dialog { max-width: 600px; }
+
+    .btn-outline-primary {
+      color: #337ab7;
+      background-color: transparent;
+      border-color: #337ab7;
+    }
+    .btn-outline-primary:hover {
+      color: #fff;
+      background-color: #337ab7;
+      border-color: #337ab7;
+    }
+    .btn-outline-info {
+      color: #5bc0de;
+      background-color: transparent;
+      border-color: #5bc0de;
+    }
+    .btn-outline-info:hover {
+      color: #fff;
+      background-color: #5bc0de;
+      border-color: #5bc0de;
+    }
+    .btn-outline-warning {
+      color: #f0ad4e;
+      background-color: transparent;
+      border-color: #f0ad4e;
+    }
+    .btn-outline-warning:hover {
+      color: #fff;
+      background-color: #f0ad4e;
+      border-color: #f0ad4e;
+    }
+    .btn-outline-danger {
+      color: #d9534f;
+      background-color: transparent;
+      border-color: #d9534f;
+    }
+    .btn-outline-danger:hover {
+      color: #fff;
+      background-color: #d9534f;
+      border-color: #d9534f;
+    }
   </style>
 </head>
 <body>
@@ -55,50 +96,78 @@
       <hr/>
 
       <h3>Active Feature Flags</h3>
-      <div id="flagsContainer">
-        <div th:each="flag : ${flags}"
-             th:class="${flag.enabled} ? 'flag-card flag-enabled' : 'flag-card flag-disabled'">
-          <div style="display: flex; justify-content: space-between; align-items: start;">
-            <div style="flex: 1;">
-              <h4 style="margin-top: 0;">
-                <code th:text="${flag.flagKey}">flag_key</code>
-                <span th:class="'badge ' + (${flag.enabled} ? 'badge-success' : 'badge-danger')"
-                      th:text="${flag.enabled} ? 'ENABLED' : 'DISABLED'">Status</span>
-              </h4>
-              <p th:text="${flag.description}">Description</p>
-              <div>
-                                    <span class="strategy-badge" style="background: #e3f2fd; color: #1976d2;"
-                                          th:text="${flag.strategyType}">BOOLEAN</span>
-                <span class="text-muted" style="margin-left: 10px;">
-                                        Environment: <strong th:text="${flag.environment}">development</strong>
-                                    </span>
-              </div>
-            </div>
-            <div>
-              <button class="btn btn-sm btn-primary"
-                      th:onclick="'toggleFlag(\'' + ${flag.flagKey} + '\')'">
-                <span class="glyphicon glyphicon-refresh"></span> Toggle
-              </button>
-              <button class="btn btn-sm btn-info"
-                      th:onclick="'viewFlag(\'' + ${flag.flagKey} + '\')'">
-                <span class="glyphicon glyphicon-eye-open"></span> View
-              </button>
-              <button class="btn btn-sm btn-warning"
-                      th:onclick="'editFlag(\'' + ${flag.flagKey} + '\')'">
-                <span class="glyphicon glyphicon-edit"></span> Edit
-              </button>
-              <button class="btn btn-sm btn-danger"
-                      th:onclick="'deleteFlag(\'' + ${flag.flagKey} + '\')'">
-                <span class="glyphicon glyphicon-trash"></span> Delete
-              </button>
-            </div>
-          </div>
+<div id="flagsContainer">
+  <div th:each="flag : ${flags}"
+       th:class="${flag.enabled} ? 'flag-card flag-enabled' : 'flag-card flag-disabled'">
+    <div style="display: flex; justify-content: space-between; align-items: start;">
+      <div style="flex: 1;">
+        <h4 style="margin-top: 0;">
+          <code th:text="${flag.flagKey}">flag_key</code>
+          <span th:class="(${flag.enabled} ? 'background-color: #5cb85c; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;' : 'badge-danger')"
+                th:text="${flag.enabled} ? 'ENABLED' : 'DISABLED'">Status</span>
+        </h4>
+        <p th:text="${flag.description}">Description</p>
+        <div>
+                    <span class="strategy-badge" style="background: #e3f2fd; color: #1976d2;"
+                          th:text="${flag.strategyType}">BOOLEAN</span>
+          <span class="text-muted" style="margin-left: 10px;">
+                        Environment: <strong th:text="${flag.environment}">development</strong>
+                    </span>
         </div>
       </div>
+      <div style="white-space: nowrap;">
+        <button class="btn btn-sm btn-outline-primary"
+                th:attr="data-flag-key=${flag.flagKey}"
+                onclick="showToggleConfirm(this.getAttribute('data-flag-key'))"
+                title="Toggle flag on/off"
+                style="min-width: 80px; margin-right: 5px;">
+          <span class="glyphicon glyphicon-refresh"></span> Toggle
+        </button>
+        <button class="btn btn-sm btn-outline-info"
+                th:attr="data-flag-key=${flag.flagKey}"
+                onclick="viewFlagModal(this.getAttribute('data-flag-key'))"
+                title="View flag details"
+                style="min-width: 80px; margin-right: 5px;">
+          <span class="glyphicon glyphicon-eye-open"></span> View
+        </button>
+        <button class="btn btn-sm btn-outline-warning"
+                th:attr="data-flag-key=${flag.flagKey}"
+                onclick="editFlag(this.getAttribute('data-flag-key'))"
+                title="Edit flag"
+                style="min-width: 80px; margin-right: 5px;">
+          <span class="glyphicon glyphicon-edit"></span> Edit
+        </button>
+        <button class="btn btn-sm btn-outline-danger"
+                th:attr="data-flag-key=${flag.flagKey}"
+                onclick="showDeleteConfirm(this.getAttribute('data-flag-key'))"
+                title="Delete flag"
+                style="min-width: 80px;">
+          <span class="glyphicon glyphicon-trash"></span> Delete
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
-      <hr/>
+<hr/>
 
       <h3>Recent Audit Log</h3>
+
+      <!-- Page Size Selector -->
+      <div style="margin-bottom: 15px;">
+        <label for="auditPageSize">Show: </label>
+        <select id="auditPageSize" class="form-control" style="width: auto; display: inline-block;" onchange="changeAuditPageSize()">
+          <option value="5" th:selected="${auditPage.size == 5}">5 per page</option>
+          <option value="10" th:selected="${auditPage.size == 10}">10 per page</option>
+          <option value="20" th:selected="${auditPage.size == 20}">20 per page</option>
+          <option value="50" th:selected="${auditPage.size == 50}">50 per page</option>
+        </select>
+        <span class="text-muted" style="margin-left: 15px;">
+        Showing <strong th:text="${auditPage.numberOfElements}">10</strong> of
+        <strong th:text="${auditPage.totalElements}">45</strong> entries
+    </span>
+      </div>
+
       <div class="audit-log">
         <table class="table table-striped table-condensed">
           <thead>
@@ -111,6 +180,9 @@
           </tr>
           </thead>
           <tbody>
+          <tr th:if="${auditPage.totalElements == 0}">
+            <td colspan="5" class="text-center text-muted">No audit entries found</td>
+          </tr>
           <tr th:each="audit : ${recentAudits}">
             <td th:text="${#temporals.format(audit.timestamp, 'yyyy-MM-dd HH:mm:ss')}">2024-01-01 12:00:00</td>
             <td><code th:text="${audit.flagKey}">flag_key</code></td>
@@ -123,7 +195,70 @@
           </tbody>
         </table>
       </div>
-    </div>
+
+      <!-- Pagination Controls -->
+      <div th:if="${auditPage.totalPages > 1}" class="text-center" style="margin-top: 20px;">
+        <nav>
+          <ul class="pagination">
+            <!-- First Page -->
+            <li th:class="${auditPage.first} ? 'disabled' : ''">
+              <a th:if="${!auditPage.first}"
+                 th:href="@{/admin/flags(auditPage=0, auditSize=${auditPage.size})}"
+                 aria-label="First">
+                <span aria-hidden="true">&laquo;&laquo;</span>
+              </a>
+              <span th:if="${auditPage.first}" aria-hidden="true">&laquo;&laquo;</span>
+            </li>
+
+            <!-- Previous Page -->
+            <li th:class="${auditPage.first} ? 'disabled' : ''">
+              <a th:if="${!auditPage.first}"
+                 th:href="@{/admin/flags(auditPage=${auditPage.number - 1}, auditSize=${auditPage.size})}"
+                 aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+              </a>
+              <span th:if="${auditPage.first}" aria-hidden="true">&laquo;</span>
+            </li>
+
+            <!-- Page Numbers -->
+            <li th:each="pageNum : ${#numbers.sequence(0, auditPage.totalPages - 1)}"
+                th:if="${pageNum >= auditPage.number - 2 && pageNum <= auditPage.number + 2}"
+                th:class="${pageNum == auditPage.number} ? 'active' : ''">
+              <a th:if="${pageNum != auditPage.number}"
+                 th:href="@{/admin/flags(auditPage=${pageNum}, auditSize=${auditPage.size})}"
+                 th:text="${pageNum + 1}">1</a>
+              <span th:if="${pageNum == auditPage.number}" th:text="${pageNum + 1}">1</span>
+            </li>
+
+            <!-- Next Page -->
+            <li th:class="${auditPage.last} ? 'disabled' : ''">
+              <a th:if="${!auditPage.last}"
+                 th:href="@{/admin/flags(auditPage=${auditPage.number + 1}, auditSize=${auditPage.size})}"
+                 aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+              </a>
+              <span th:if="${auditPage.last}" aria-hidden="true">&raquo;</span>
+            </li>
+
+            <!-- Last Page -->
+            <li th:class="${auditPage.last} ? 'disabled' : ''">
+              <a th:if="${!auditPage.last}"
+                 th:href="@{/admin/flags(auditPage=${auditPage.totalPages - 1}, auditSize=${auditPage.size})}"
+                 aria-label="Last">
+                <span aria-hidden="true">&raquo;&raquo;</span>
+              </a>
+              <span th:if="${auditPage.last}" aria-hidden="true">&raquo;&raquo;</span>
+            </li>
+          </ul>
+        </nav>
+
+        <!-- Page Info -->
+        <p class="text-muted" style="font-size: 12px;">
+          Page <strong th:text="${auditPage.number + 1}">1</strong> of
+          <strong th:text="${auditPage.totalPages}">5</strong>
+        </p>
+      </div>
+      </div>
   </div>
 </div>
 
@@ -200,9 +335,120 @@
   </div>
 </div>
 
+<!-- View Flag Modal -->
+<div class="modal" id="viewFlagModal" tabindex="-1" role="dialog" style="display: none; position: fixed; z-index: 1050; top: 0; left: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+  <div class="modal-dialog" role="document" style="position: relative; width: 600px; margin: 50px auto; background-color: white; border-radius: 6px; box-shadow: 0 5px 15px rgba(0,0,0,0.5);">
+    <div class="modal-content" style="background-color: white; border: 1px solid #ddd; border-radius: 6px;">
+      <div class="modal-header" style="padding: 15px; border-bottom: 1px solid #e5e5e5;">
+        <button type="button" class="close" onclick="hideViewModal()" style="float: right; font-size: 21px; font-weight: bold; line-height: 1; color: #000; opacity: 0.2; background: transparent; border: 0; cursor: pointer;">&times;</button>
+        <h4 class="modal-title" style="margin: 0; line-height: 1.42857143;">Flag Details</h4>
+      </div>
+      <div class="modal-body" style="position: relative; padding: 15px;">
+        <table class="table table-bordered">
+          <tbody>
+          <tr>
+            <th style="width: 30%;">Flag Key</th>
+            <td><code id="view-flagKey"></code></td>
+          </tr>
+          <tr>
+            <th>Description</th>
+            <td id="view-description"></td>
+          </tr>
+          <tr>
+            <th>Status</th>
+            <td id="view-enabled"></td>
+          </tr>
+          <tr>
+            <th>Strategy Type</th>
+            <td id="view-strategyType"></td>
+          </tr>
+          <tr>
+            <th>Strategy Config</th>
+            <td><pre id="view-strategyConfig" style="margin: 0; background: #f5f5f5; padding: 10px; border-radius: 4px;"></pre></td>
+          </tr>
+          <tr>
+            <th>Environment</th>
+            <td id="view-environment"></td>
+          </tr>
+          <tr>
+            <th>Created At</th>
+            <td id="view-createdAt"></td>
+          </tr>
+          <tr>
+            <th>Created By</th>
+            <td id="view-createdBy"></td>
+          </tr>
+          <tr>
+            <th>Updated At</th>
+            <td id="view-updatedAt"></td>
+          </tr>
+          <tr>
+            <th>Updated By</th>
+            <td id="view-updatedBy"></td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer" style="padding: 15px; text-align: right; border-top: 1px solid #e5e5e5;">
+        <button type="button" class="btn btn-default" onclick="hideViewModal()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toggle Confirmation Modal -->
+<div class="modal" id="toggleConfirmModal" tabindex="-1" role="dialog" style="display: none; position: fixed; z-index: 1050; top: 0; left: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+  <div class="modal-dialog" role="document" style="position: relative; width: 450px; margin: 100px auto; background-color: white; border-radius: 6px; box-shadow: 0 5px 15px rgba(0,0,0,0.5);">
+    <div class="modal-content" style="background-color: white; border: 1px solid #ddd; border-radius: 6px;">
+      <div class="modal-header" style="padding: 15px; border-bottom: 1px solid #e5e5e5;">
+        <button type="button" class="close" onclick="hideToggleConfirm()" style="float: right; font-size: 21px; font-weight: bold; line-height: 1; color: #000; opacity: 0.2; background: transparent; border: 0; cursor: pointer;">&times;</button>
+        <h4 class="modal-title" style="margin: 0; line-height: 1.42857143;">
+          <span class="glyphicon glyphicon-question-sign" style="color: #5bc0de;"></span> Confirm Toggle
+        </h4>
+      </div>
+      <div class="modal-body" style="position: relative; padding: 20px;">
+        <p>Are you sure you want to toggle flag <strong><code id="toggle-flag-name"></code></strong>?</p>
+        <p class="text-muted" style="font-size: 12px;">This will change its enabled/disabled state immediately.</p>
+      </div>
+      <div class="modal-footer" style="padding: 15px; text-align: right; border-top: 1px solid #e5e5e5;">
+        <button type="button" class="btn btn-default" onclick="hideToggleConfirm()">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="confirmToggle()">
+          <span class="glyphicon glyphicon-refresh"></span> Toggle
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal" id="deleteConfirmModal" tabindex="-1" role="dialog" style="display: none; position: fixed; z-index: 1050; top: 0; left: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+  <div class="modal-dialog" role="document" style="position: relative; width: 450px; margin: 100px auto; background-color: white; border-radius: 6px; box-shadow: 0 5px 15px rgba(0,0,0,0.5);">
+    <div class="modal-content" style="background-color: white; border: 1px solid #ddd; border-radius: 6px;">
+      <div class="modal-header" style="padding: 15px; border-bottom: 1px solid #e5e5e5;">
+        <button type="button" class="close" onclick="hideDeleteConfirm()" style="float: right; font-size: 21px; font-weight: bold; line-height: 1; color: #000; opacity: 0.2; background: transparent; border: 0; cursor: pointer;">&times;</button>
+        <h4 class="modal-title" style="margin: 0; line-height: 1.42857143;">
+          <span class="glyphicon glyphicon-warning-sign" style="color: #d9534f;"></span> Confirm Delete
+        </h4>
+      </div>
+      <div class="modal-body" style="position: relative; padding: 20px;">
+        <p>Are you sure you want to delete flag <strong><code id="delete-flag-name"></code></strong>?</p>
+        <p class="text-danger" style="font-size: 12px;"><strong>Warning:</strong> This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer" style="padding: 15px; text-align: right; border-top: 1px solid #e5e5e5;">
+        <button type="button" class="btn btn-default" onclick="hideDeleteConfirm()">Cancel</button>
+        <button type="button" class="btn btn-danger" onclick="confirmDelete()">
+          <span class="glyphicon glyphicon-trash"></span> Delete
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
   let editMode = false;
   let currentFlagKey = null;
+  let toggleFlagKey = null;
+  let deleteFlagKey = null;
 
   function showCreateModal() {
     editMode = false;
@@ -210,22 +456,117 @@
     document.getElementById('flagForm').reset();
     document.getElementById('flagKey').disabled = false;
     updateStrategyConfig();
-
-    // Show modal with proper styling
-    const modal = document.getElementById('flagModal');
-    modal.style.display = 'block';
+    document.getElementById('flagModal').style.display = 'block';
   }
 
   function hideModal() {
-    const modal = document.getElementById('flagModal');
-    modal.style.display = 'none';
+    document.getElementById('flagModal').style.display = 'none';
+  }
+
+  function hideViewModal() {
+    document.getElementById('viewFlagModal').style.display = 'none';
+  }
+
+  function showToggleConfirm(flagKey) {
+    toggleFlagKey = flagKey;
+    document.getElementById('toggle-flag-name').textContent = flagKey;
+    document.getElementById('toggleConfirmModal').style.display = 'block';
+  }
+
+  function hideToggleConfirm() {
+    document.getElementById('toggleConfirmModal').style.display = 'none';
+    toggleFlagKey = null;
+  }
+
+  function confirmToggle() {
+    if (toggleFlagKey) {
+      fetch('/api/v1/flags/' + toggleFlagKey + '/toggle', { method: 'POST' })
+        .then(response => response.json())
+        .then(() => {
+          hideToggleConfirm();
+          location.reload();
+        })
+        .catch(error => {
+          alert('Error: ' + error.message);
+          hideToggleConfirm();
+        });
+    }
+  }
+
+  function showDeleteConfirm(flagKey) {
+    deleteFlagKey = flagKey;
+    document.getElementById('delete-flag-name').textContent = flagKey;
+    document.getElementById('deleteConfirmModal').style.display = 'block';
+  }
+
+  function hideDeleteConfirm() {
+    document.getElementById('deleteConfirmModal').style.display = 'none';
+    deleteFlagKey = null;
+  }
+
+  function confirmDelete() {
+    if (deleteFlagKey) {
+      fetch('/api/v1/flags/' + deleteFlagKey, { method: 'DELETE' })
+        .then(() => {
+          hideDeleteConfirm();
+          location.reload();
+        })
+        .catch(error => {
+          alert('Error: ' + error.message);
+          hideDeleteConfirm();
+        });
+    }
+  }
+
+  function viewFlagModal(flagKey) {
+    fetch('/api/v1/flags/' + flagKey)
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('view-flagKey').textContent = data.flagKey;
+        document.getElementById('view-description').textContent = data.description || 'N/A';
+
+        document.getElementById('view-enabled').innerHTML = data.enabled
+          ? '<span class="badge badge-success">ENABLED</span>'
+          : '<span class="badge badge-danger">DISABLED</span>';
+
+        document.getElementById('view-strategyType').textContent = data.strategyType;
+
+        if (data.strategyConfig && Object.keys(data.strategyConfig).length > 0) {
+          document.getElementById('view-strategyConfig').textContent =
+            JSON.stringify(data.strategyConfig, null, 2);
+        } else {
+          document.getElementById('view-strategyConfig').textContent = '{}';
+        }
+
+        document.getElementById('view-environment').textContent = data.environment;
+        document.getElementById('view-createdAt').textContent = formatDate(data.createdAt);
+        document.getElementById('view-createdBy').textContent = data.createdBy || 'N/A';
+        document.getElementById('view-updatedAt').textContent = formatDate(data.updatedAt);
+        document.getElementById('view-updatedBy').textContent = data.updatedBy || 'N/A';
+
+        document.getElementById('viewFlagModal').style.display = 'block';
+      })
+      .catch(error => {
+        alert('Error fetching flag details: ' + error.message);
+      });
+  }
+
+  function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleString('en-IN', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   }
 
   function updateStrategyConfig() {
     const strategyType = document.getElementById('strategyType').value;
     const configDiv = document.getElementById('strategyConfigDiv');
 
-    // Hide all configs
     document.getElementById('percentageConfig').style.display = 'none';
     document.getElementById('whitelistConfig').style.display = 'none';
     document.getElementById('blacklistConfig').style.display = 'none';
@@ -297,24 +638,6 @@
       });
   }
 
-  function toggleFlag(flagKey) {
-    if (confirm('Toggle flag "' + flagKey + '"?')) {
-      fetch('/api/v1/flags/' + flagKey + '/toggle', { method: 'POST' })
-        .then(response => response.json())
-        .then(() => location.reload())
-        .catch(error => alert('Error: ' + error.message));
-    }
-  }
-
-  function viewFlag(flagKey) {
-    fetch('/api/v1/flags/' + flagKey)
-      .then(response => response.json())
-      .then(data => {
-        alert(JSON.stringify(data, null, 2));
-      })
-      .catch(error => alert('Error: ' + error.message));
-  }
-
   function editFlag(flagKey) {
     editMode = true;
     currentFlagKey = flagKey;
@@ -348,30 +671,20 @@
       .catch(error => alert('Error: ' + error.message));
   }
 
-  function deleteFlag(flagKey) {
-    if (confirm('Are you sure you want to delete flag "' + flagKey + '"?')) {
-      fetch('/api/v1/flags/' + flagKey, { method: 'DELETE' })
-        .then(() => location.reload())
-        .catch(error => alert('Error: ' + error.message));
-    }
+  function changeAuditPageSize() {
+    const pageSize = document.getElementById('auditPageSize').value;
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.set('auditPage', '0');
+    currentUrl.searchParams.set('auditSize', pageSize);
+    window.location.href = currentUrl.toString();
   }
 
-  // Close modal when clicking close button or backdrop
-  document.addEventListener('DOMContentLoaded', function() {
-    // Close button handlers
-    var closeButtons = document.querySelectorAll('[data-dismiss="modal"]');
-    closeButtons.forEach(function(btn) {
-      btn.addEventListener('click', hideModal);
-    });
-
-    // Backdrop click
-    document.addEventListener('click', function(e) {
-      if (e.target.id === 'modalBackdrop') {
-        hideModal();
-      }
-    });
+  document.addEventListener('click', function(e) {
+    if (e.target.id === 'flagModal') hideModal();
+    if (e.target.id === 'viewFlagModal') hideViewModal();
+    if (e.target.id === 'toggleConfirmModal') hideToggleConfirm();
+    if (e.target.id === 'deleteConfirmModal') hideDeleteConfirm();
   });
 </script>
-
 </body>
 </html>
