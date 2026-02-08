@@ -6,6 +6,5 @@ public enum StrategyType {
 	WHITELIST,
 	BLACKLIST,
 	USER_ATTRIBUTE,
-	DATETIME_RANGE,
 	KILL_SWITCH
 }

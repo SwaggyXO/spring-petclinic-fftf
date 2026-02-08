@@ -21,12 +21,29 @@
       font-weight: bold;
     }
     .audit-log {
-      max-height: 300px;
-      overflow-y: auto;
       font-size: 12px;
     }
     .modal-dialog { max-width: 600px; }
 
+    /* Badge styles with proper colors */
+    .badge-success {
+      background-color: #5cb85c !important;
+      color: white !important;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: bold;
+    }
+    .badge-danger {
+      background-color: #d9534f !important;
+      color: white !important;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: bold;
+    }
+
+    /* Outline button styles */
     .btn-outline-primary {
       color: #337ab7;
       background-color: transparent;
@@ -67,13 +84,69 @@
       background-color: #d9534f;
       border-color: #d9534f;
     }
+
+    /* Pagination styles */
+    .pagination {
+      display: inline-block;
+      padding-left: 0;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    .pagination > li {
+      display: inline;
+    }
+    .pagination > li > a,
+    .pagination > li > span {
+      position: relative;
+      float: left;
+      padding: 6px 12px;
+      margin-left: -1px;
+      line-height: 1.42857143;
+      color: #337ab7;
+      text-decoration: none;
+      background-color: #fff;
+      border: 1px solid #ddd;
+    }
+    .pagination > li:first-child > a,
+    .pagination > li:first-child > span {
+      margin-left: 0;
+      border-top-left-radius: 4px;
+      border-bottom-left-radius: 4px;
+    }
+    .pagination > li:last-child > a,
+    .pagination > li:last-child > span {
+      border-top-right-radius: 4px;
+      border-bottom-right-radius: 4px;
+    }
+    .pagination > li > a:hover,
+    .pagination > li > span:hover {
+      z-index: 2;
+      color: #23527c;
+      background-color: #eee;
+      border-color: #ddd;
+    }
+    .pagination > .active > a,
+    .pagination > .active > span {
+      z-index: 3;
+      color: #fff;
+      cursor: default;
+      background-color: #337ab7;
+      border-color: #337ab7;
+    }
+    .pagination > .disabled > span,
+    .pagination > .disabled > a {
+      color: #777;
+      cursor: not-allowed;
+      background-color: #fff;
+      border-color: #ddd;
+    }
   </style>
 </head>
 <body>
 <div class="container">
   <div class="row">
     <div class="col-md-12">
-      <!-- Add error alert -->
+      <!-- Error alert -->
       <div th:if="${error}" class="alert alert-danger alert-dismissible" role="alert">
         <button type="button" class="close" data-dismiss="alert" aria-label="Close">
           <span aria-hidden="true">&times;</span>
@@ -96,60 +169,60 @@
       <hr/>
 
       <h3>Active Feature Flags</h3>
-<div id="flagsContainer">
-  <div th:each="flag : ${flags}"
-       th:class="${flag.enabled} ? 'flag-card flag-enabled' : 'flag-card flag-disabled'">
-    <div style="display: flex; justify-content: space-between; align-items: start;">
-      <div style="flex: 1;">
-        <h4 style="margin-top: 0;">
-          <code th:text="${flag.flagKey}">flag_key</code>
-          <span th:class="(${flag.enabled} ? 'background-color: #5cb85c; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;' : 'badge-danger')"
-                th:text="${flag.enabled} ? 'ENABLED' : 'DISABLED'">Status</span>
-        </h4>
-        <p th:text="${flag.description}">Description</p>
-        <div>
-                    <span class="strategy-badge" style="background: #e3f2fd; color: #1976d2;"
-                          th:text="${flag.strategyType}">BOOLEAN</span>
-          <span class="text-muted" style="margin-left: 10px;">
-                        Environment: <strong th:text="${flag.environment}">development</strong>
-                    </span>
+      <div id="flagsContainer">
+        <div th:each="flag : ${flags}"
+             th:class="${flag.enabled} ? 'flag-card flag-enabled' : 'flag-card flag-disabled'">
+          <div style="display: flex; justify-content: space-between; align-items: start;">
+            <div style="flex: 1;">
+              <h4 style="margin-top: 0;">
+                <code th:text="${flag.flagKey}">flag_key</code>
+                <span th:class="'badge ' + (${flag.enabled} ? 'badge-success' : 'badge-danger')"
+                      th:text="${flag.enabled} ? 'ENABLED' : 'DISABLED'">Status</span>
+              </h4>
+              <p th:text="${flag.description}">Description</p>
+              <div>
+                <span class="strategy-badge" style="background: #e3f2fd; color: #1976d2;"
+                      th:text="${flag.strategyType}">BOOLEAN</span>
+                <span class="text-muted" style="margin-left: 10px;">
+                  Environment: <strong th:text="${flag.environment}">development</strong>
+                </span>
+              </div>
+            </div>
+            <div style="white-space: nowrap;">
+              <button class="btn btn-sm btn-outline-primary"
+                      th:attr="data-flag-key=${flag.flagKey}"
+                      onclick="showToggleConfirm(this.getAttribute('data-flag-key'))"
+                      title="Toggle flag on/off"
+                      style="min-width: 80px; margin-right: 5px;">
+                <span class="glyphicon glyphicon-refresh"></span> Toggle
+              </button>
+              <button class="btn btn-sm btn-outline-info"
+                      th:attr="data-flag-key=${flag.flagKey}"
+                      onclick="viewFlagModal(this.getAttribute('data-flag-key'))"
+                      title="View flag details"
+                      style="min-width: 80px; margin-right: 5px;">
+                <span class="glyphicon glyphicon-eye-open"></span> View
+              </button>
+              <button class="btn btn-sm btn-outline-warning"
+                      th:attr="data-flag-key=${flag.flagKey}"
+                      onclick="editFlag(this.getAttribute('data-flag-key'))"
+                      title="Edit flag"
+                      style="min-width: 80px; margin-right: 5px;">
+                <span class="glyphicon glyphicon-edit"></span> Edit
+              </button>
+              <button class="btn btn-sm btn-outline-danger"
+                      th:attr="data-flag-key=${flag.flagKey}"
+                      onclick="showDeleteConfirm(this.getAttribute('data-flag-key'))"
+                      title="Delete flag"
+                      style="min-width: 80px;">
+                <span class="glyphicon glyphicon-trash"></span> Delete
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-      <div style="white-space: nowrap;">
-        <button class="btn btn-sm btn-outline-primary"
-                th:attr="data-flag-key=${flag.flagKey}"
-                onclick="showToggleConfirm(this.getAttribute('data-flag-key'))"
-                title="Toggle flag on/off"
-                style="min-width: 80px; margin-right: 5px;">
-          <span class="glyphicon glyphicon-refresh"></span> Toggle
-        </button>
-        <button class="btn btn-sm btn-outline-info"
-                th:attr="data-flag-key=${flag.flagKey}"
-                onclick="viewFlagModal(this.getAttribute('data-flag-key'))"
-                title="View flag details"
-                style="min-width: 80px; margin-right: 5px;">
-          <span class="glyphicon glyphicon-eye-open"></span> View
-        </button>
-        <button class="btn btn-sm btn-outline-warning"
-                th:attr="data-flag-key=${flag.flagKey}"
-                onclick="editFlag(this.getAttribute('data-flag-key'))"
-                title="Edit flag"
-                style="min-width: 80px; margin-right: 5px;">
-          <span class="glyphicon glyphicon-edit"></span> Edit
-        </button>
-        <button class="btn btn-sm btn-outline-danger"
-                th:attr="data-flag-key=${flag.flagKey}"
-                onclick="showDeleteConfirm(this.getAttribute('data-flag-key'))"
-                title="Delete flag"
-                style="min-width: 80px;">
-          <span class="glyphicon glyphicon-trash"></span> Delete
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
 
-<hr/>
+      <hr/>
 
       <h3>Recent Audit Log</h3>
 
@@ -163,9 +236,9 @@
           <option value="50" th:selected="${auditPage.size == 50}">50 per page</option>
         </select>
         <span class="text-muted" style="margin-left: 15px;">
-        Showing <strong th:text="${auditPage.numberOfElements}">10</strong> of
-        <strong th:text="${auditPage.totalElements}">45</strong> entries
-    </span>
+          Showing <strong th:text="${auditPage.numberOfElements}">10</strong> of
+          <strong th:text="${auditPage.totalElements}">45</strong> entries
+        </span>
       </div>
 
       <div class="audit-log">
@@ -258,7 +331,7 @@
           <strong th:text="${auditPage.totalPages}">5</strong>
         </p>
       </div>
-      </div>
+    </div>
   </div>
 </div>
 
@@ -272,25 +345,58 @@
       </div>
       <div class="modal-body" style="position: relative; padding: 15px;">
         <form id="flagForm">
-          <div class="form-group">
+          <!-- Flag Key - Only visible in CREATE mode -->
+          <div class="form-group" id="flagKeyGroup">
             <label for="flagKey">Flag Key *</label>
             <input type="text" class="form-control" id="flagKey"
                    placeholder="e.g., new_checkout_flow" pattern="[a-z0-9_]+" required>
             <small class="text-muted">Only lowercase letters, numbers, and underscores</small>
           </div>
 
+          <!-- Flag Key Display - Only visible in EDIT mode -->
+          <div class="form-group" id="flagKeyDisplay" style="display: none;">
+            <label>Flag Key</label>
+            <div class="well well-sm" style="background: #f5f5f5; padding: 10px; margin-bottom: 0;">
+              <code id="flagKeyReadonly" style="font-size: 14px;"></code>
+            </div>
+            <small class="text-muted">Flag key cannot be changed after creation</small>
+          </div>
+
+          <!-- Description - Editable in both modes -->
           <div class="form-group">
             <label for="description">Description</label>
             <textarea class="form-control" id="description" rows="2"
                       placeholder="What does this flag control?"></textarea>
           </div>
 
-          <div class="form-group">
+          <!-- Environment - Only visible in CREATE mode -->
+          <div class="form-group" id="environmentGroup">
+            <label for="environment">Environment *</label>
+            <select class="form-control" id="environment" required>
+              <option value="development">Development</option>
+              <option value="staging">Staging</option>
+              <option value="production">Production</option>
+            </select>
+          </div>
+
+          <!-- Environment Display - Only visible in EDIT mode -->
+          <div class="form-group" id="environmentDisplay" style="display: none;">
+            <label>Environment</label>
+            <div class="well well-sm" style="background: #f5f5f5; padding: 10px; margin-bottom: 0;">
+              <span id="environmentReadonly" class="badge"></span>
+            </div>
+            <small class="text-muted">Environment cannot be changed after creation</small>
+          </div>
+
+          <!-- Enabled - Only visible in CREATE mode -->
+          <div class="form-group" id="enabledGroup">
             <label>
               <input type="checkbox" id="enabled"> Enabled
             </label>
+            <small class="text-muted" style="display: block;">Use Toggle button to enable/disable after creation</small>
           </div>
 
+          <!-- Strategy Type - Editable in both modes -->
           <div class="form-group">
             <label for="strategyType">Strategy Type *</label>
             <select class="form-control" id="strategyType" onchange="updateStrategyConfig()">
@@ -303,6 +409,7 @@
             </select>
           </div>
 
+          <!-- Strategy Config - Editable in both modes -->
           <div id="strategyConfigDiv" style="display: none;">
             <div class="form-group">
               <label>Strategy Configuration</label>
@@ -321,15 +428,18 @@
             </div>
           </div>
 
+          <!-- Reason - Always visible -->
           <div class="form-group">
-            <label for="reason">Reason for Change</label>
+            <label for="reason">Reason for Change <span id="reasonRequired" style="display: none; color: red;">*</span></label>
             <input type="text" class="form-control" id="reason" placeholder="Why are you creating/updating this flag?">
           </div>
         </form>
       </div>
       <div class="modal-footer" style="padding: 15px; text-align: right; border-top: 1px solid #e5e5e5;">
         <button type="button" class="btn btn-default" onclick="hideModal()">Cancel</button>
-        <button type="button" class="btn btn-primary" onclick="saveFlag()">Save</button>
+        <button type="button" class="btn btn-primary" onclick="saveFlag()">
+          <span id="saveButtonText">Save</span>
+        </button>
       </div>
     </div>
   </div>
@@ -447,14 +557,26 @@
 <script>
   let editMode = false;
   let currentFlagKey = null;
+  let currentFlagData = null;
   let toggleFlagKey = null;
   let deleteFlagKey = null;
 
   function showCreateModal() {
     editMode = false;
-    document.getElementById('modalTitle').textContent = 'Create Feature Flag';
+    currentFlagKey = null;
+    currentFlagData = null;
+
     document.getElementById('flagForm').reset();
+    document.getElementById('flagKeyGroup').style.display = 'block';
+    document.getElementById('flagKeyDisplay').style.display = 'none';
+    document.getElementById('environmentGroup').style.display = 'block';
+    document.getElementById('environmentDisplay').style.display = 'none';
+    document.getElementById('enabledGroup').style.display = 'block';
+    document.getElementById('reasonRequired').style.display = 'none';
     document.getElementById('flagKey').disabled = false;
+    document.getElementById('modalTitle').textContent = 'Create Feature Flag';
+    document.getElementById('saveButtonText').textContent = 'Create';
+
     updateStrategyConfig();
     document.getElementById('flagModal').style.display = 'block';
   }
@@ -480,7 +602,10 @@
 
   function confirmToggle() {
     if (toggleFlagKey) {
-      fetch('/api/v1/flags/' + toggleFlagKey + '/toggle', { method: 'POST' })
+      fetch('/api/v1/flags/' + toggleFlagKey + '/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
         .then(response => response.json())
         .then(() => {
           hideToggleConfirm();
@@ -524,26 +649,21 @@
       .then(data => {
         document.getElementById('view-flagKey').textContent = data.flagKey;
         document.getElementById('view-description').textContent = data.description || 'N/A';
-
         document.getElementById('view-enabled').innerHTML = data.enabled
           ? '<span class="badge badge-success">ENABLED</span>'
           : '<span class="badge badge-danger">DISABLED</span>';
-
         document.getElementById('view-strategyType').textContent = data.strategyType;
-
         if (data.strategyConfig && Object.keys(data.strategyConfig).length > 0) {
           document.getElementById('view-strategyConfig').textContent =
             JSON.stringify(data.strategyConfig, null, 2);
         } else {
           document.getElementById('view-strategyConfig').textContent = '{}';
         }
-
         document.getElementById('view-environment').textContent = data.environment;
         document.getElementById('view-createdAt').textContent = formatDate(data.createdAt);
         document.getElementById('view-createdBy').textContent = data.createdBy || 'N/A';
         document.getElementById('view-updatedAt').textContent = formatDate(data.updatedAt);
         document.getElementById('view-updatedBy').textContent = data.updatedBy || 'N/A';
-
         document.getElementById('viewFlagModal').style.display = 'block';
       })
       .catch(error => {
@@ -566,7 +686,6 @@
   function updateStrategyConfig() {
     const strategyType = document.getElementById('strategyType').value;
     const configDiv = document.getElementById('strategyConfigDiv');
-
     document.getElementById('percentageConfig').style.display = 'none';
     document.getElementById('whitelistConfig').style.display = 'none';
     document.getElementById('blacklistConfig').style.display = 'none';
@@ -586,76 +705,165 @@
   }
 
   function saveFlag() {
-    const flagKey = document.getElementById('flagKey').value;
-    const description = document.getElementById('description').value;
-    const enabled = document.getElementById('enabled').checked;
-    const strategyType = document.getElementById('strategyType').value;
     const reason = document.getElementById('reason').value;
 
-    let strategyConfig = {};
-    if (strategyType === 'PERCENTAGE') {
-      strategyConfig = { percentage: parseInt(document.getElementById('percentage').value) };
-    } else if (strategyType === 'WHITELIST') {
-      const whitelist = document.getElementById('whitelist').value.split(',').map(s => s.trim());
-      strategyConfig = { whitelist: whitelist };
-    } else if (strategyType === 'BLACKLIST') {
-      const blacklist = document.getElementById('blacklist').value.split(',').map(s => s.trim());
-      strategyConfig = { blacklist: blacklist };
+    if (editMode && !reason) {
+      alert('Reason for change is required when updating a flag');
+      return;
     }
 
-    const payload = {
-      flagKey: flagKey,
-      description: description,
-      enabled: enabled,
-      strategyType: strategyType,
-      strategyConfig: strategyConfig,
-      environment: 'development',
-      createdBy: 'admin',
-      updatedBy: 'admin',
-      reason: reason || 'No reason provided'
-    };
+    if (editMode) {
+      // UPDATE MODE - Send complete payload with all fields from currentFlagData
+      const strategyType = document.getElementById('strategyType').value;
 
-    const method = editMode ? 'PUT' : 'POST';
-    const url = editMode ? `/api/v1/flags/${currentFlagKey}` : '/api/v1/flags';
+      if (!strategyType || strategyType === '') {
+        alert('Strategy Type is required');
+        return;
+      }
 
-    fetch(url, {
-      method: method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    })
-      .then(response => {
-        if (!response.ok) {
-          return response.json().then(err => { throw err; });
-        }
-        return response.json();
+      let strategyConfig = {};
+      if (strategyType === 'PERCENTAGE') {
+        strategyConfig = { percentage: parseInt(document.getElementById('percentage').value) };
+      } else if (strategyType === 'WHITELIST') {
+        const whitelistValue = document.getElementById('whitelist').value.trim();
+        strategyConfig = whitelistValue ?
+          { whitelist: whitelistValue.split(',').map(s => s.trim()).filter(s => s.length > 0) } :
+          { whitelist: [] };
+      } else if (strategyType === 'BLACKLIST') {
+        const blacklistValue = document.getElementById('blacklist').value.trim();
+        strategyConfig = blacklistValue ?
+          { blacklist: blacklistValue.split(',').map(s => s.trim()).filter(s => s.length > 0) } :
+          { blacklist: [] };
+      }
+
+      // THE FIX: Send ALL fields that backend DTO expects
+      const payload = {
+        flagKey: currentFlagData.flagKey,           // Required by DTO
+        description: document.getElementById('description').value,
+        enabled: currentFlagData.enabled,           // Keep existing
+        strategyType: strategyType,
+        strategyConfig: strategyConfig,
+        environment: currentFlagData.environment,   // Keep existing
+        createdBy: currentFlagData.createdBy || 'admin',  // Required by DTO
+        updatedBy: 'admin',
+        reason: reason
+      };
+
+      console.log('UPDATE Payload:', JSON.stringify(payload, null, 2));
+
+      fetch(`/api/v1/flags/${currentFlagKey}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       })
-      .then(data => {
-        hideModal();
-        location.reload();
+        .then(response => {
+          if (!response.ok) {
+            return response.json().then(err => { throw err; });
+          }
+          return response.json();
+        })
+        .then(data => {
+          hideModal();
+          location.reload();
+        })
+        .catch(error => {
+          console.error('Update error:', error);
+          alert('Error: ' + (error.message || JSON.stringify(error)));
+        });
+
+    } else {
+      // CREATE MODE
+      const flagKey = document.getElementById('flagKey').value;
+      const description = document.getElementById('description').value;
+      const enabled = document.getElementById('enabled').checked;
+      const strategyType = document.getElementById('strategyType').value;
+      const environment = document.getElementById('environment').value;
+
+      if (!strategyType || strategyType === '') {
+        alert('Strategy Type is required');
+        return;
+      }
+
+      let strategyConfig = {};
+      if (strategyType === 'PERCENTAGE') {
+        strategyConfig = { percentage: parseInt(document.getElementById('percentage').value) };
+      } else if (strategyType === 'WHITELIST') {
+        strategyConfig = { whitelist: document.getElementById('whitelist').value.split(',').map(s => s.trim()).filter(s => s.length > 0) };
+      } else if (strategyType === 'BLACKLIST') {
+        strategyConfig = { blacklist: document.getElementById('blacklist').value.split(',').map(s => s.trim()).filter(s => s.length > 0) };
+      }
+
+      const payload = {
+        flagKey: flagKey,
+        description: description,
+        enabled: enabled,
+        strategyType: strategyType,
+        strategyConfig: strategyConfig,
+        environment: environment,
+        createdBy: 'admin',
+        reason: reason || 'No reason provided'
+      };
+
+      console.log('CREATE Payload:', JSON.stringify(payload, null, 2));
+
+      fetch('/api/v1/flags', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       })
-      .catch(error => {
-        alert('Error: ' + (error.message || JSON.stringify(error)));
-      });
+        .then(response => {
+          if (!response.ok) {
+            return response.json().then(err => { throw err; });
+          }
+          return response.json();
+        })
+        .then(data => {
+          hideModal();
+          location.reload();
+        })
+        .catch(error => {
+          console.error('Create error:', error);
+          alert('Error: ' + (error.message || JSON.stringify(error)));
+        });
+    }
   }
 
   function editFlag(flagKey) {
     editMode = true;
     currentFlagKey = flagKey;
-    document.getElementById('modalTitle').textContent = 'Edit Feature Flag';
-    document.getElementById('flagKey').disabled = true;
 
     fetch('/api/v1/flags/' + flagKey)
       .then(response => response.json())
       .then(data => {
-        document.getElementById('flagKey').value = data.flagKey;
-        document.getElementById('description').value = data.description || '';
-        document.getElementById('enabled').checked = data.enabled;
-        document.getElementById('strategyType').value = data.strategyType;
+        currentFlagData = data;
+        document.getElementById('flagForm').reset();
+        document.getElementById('flagKeyGroup').style.display = 'none';
+        document.getElementById('environmentGroup').style.display = 'none';
+        document.getElementById('enabledGroup').style.display = 'none';
+        document.getElementById('flagKeyDisplay').style.display = 'block';
+        document.getElementById('flagKeyReadonly').textContent = data.flagKey;
+        document.getElementById('environmentDisplay').style.display = 'block';
 
+        const envBadge = document.getElementById('environmentReadonly');
+        envBadge.textContent = data.environment;
+        if (data.environment === 'production') {
+          envBadge.style.backgroundColor = '#d9534f';
+          envBadge.style.color = 'white';
+        } else if (data.environment === 'staging') {
+          envBadge.style.backgroundColor = '#f0ad4e';
+          envBadge.style.color = 'white';
+        } else {
+          envBadge.style.backgroundColor = '#5bc0de';
+          envBadge.style.color = 'white';
+        }
+
+        document.getElementById('reasonRequired').style.display = 'inline';
+        document.getElementById('description').value = data.description || '';
+        document.getElementById('strategyType').value = data.strategyType;
         updateStrategyConfig();
 
         if (data.strategyConfig) {
-          if (data.strategyConfig.percentage) {
+          if (data.strategyConfig.percentage !== undefined) {
             document.getElementById('percentage').value = data.strategyConfig.percentage;
           }
           if (data.strategyConfig.whitelist) {
@@ -666,17 +874,16 @@
           }
         }
 
-        showCreateModal();
+        document.getElementById('modalTitle').textContent = 'Update Feature Flag';
+        document.getElementById('saveButtonText').textContent = 'Update';
+        document.getElementById('flagModal').style.display = 'block';
       })
       .catch(error => alert('Error: ' + error.message));
   }
 
   function changeAuditPageSize() {
     const pageSize = document.getElementById('auditPageSize').value;
-    const currentUrl = new URL(window.location.href);
-    currentUrl.searchParams.set('auditPage', '0');
-    currentUrl.searchParams.set('auditSize', pageSize);
-    window.location.href = currentUrl.toString();
+    window.location.href = '/admin/flags?auditPage=0&auditSize=' + pageSize;
   }
 
   document.addEventListener('click', function(e) {
